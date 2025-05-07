@@ -1,32 +1,169 @@
-Kodosumi-Masumi API Wrapper (MIP-003 Compliant)OverviewThis FastAPI application serves as a bridge between the Masumi payment network and a Kodosumi AI flow execution service. It exposes an API compliant with the MIP-003 standard, allowing users to:Discover the service's input requirements (/input_schema).Initiate a job with specific inputs (/start_job).Receive Masumi payment details to complete the payment.Have the wrapper automatically trigger a designated Kodosumi flow upon successful payment confirmation via Masumi.Poll the Kodosumi flow for completion.Check the job status and retrieve the final result (/status).The wrapper handles authentication with Kodosumi, dynamically finds the target flow, triggers it, polls for its completion, and integrates with the Masumi payment library for payment request creation and status monitoring.PrerequisitesPython: Version 3.8 or higher.pip: Python package installer.Virtual Environment Tool: venv (recommended, usually included with Python 3).Masumi Python Library: You need access to and the ability to install the actual masumi Python library (including masumi.config.Config and masumi.payment.Payment). This wrapper assumes it's installable in your environment.Kodosumi Instance Access: Valid base URL, username, and password for your Kodosumi service.Logging Configuration: A logging_config.py file in the same directory, containing a setup_logging() function that returns a configured logger instance (as used in the wrapper script).Setup StepsGet the Code:Save the Python script from the Canvas as kodosumi_masumi_wrapper.py.Ensure you have your logging_config.py file in the same directory.Create a requirements.txt file (you can use the one provided in the previous interaction).Create and Activate Virtual Environment:Open your terminal or command prompt.Navigate to the project directory where you saved the files.Create a virtual environment:python3 -m venv .venv 
-Activate the environment:macOS/Linux: source .venv/bin/activateWindows (CMD): .\.venv\Scripts\activate.batWindows (PowerShell): .\.venv\Scripts\Activate.ps1(Your prompt should change to indicate the active environment, e.g., (.venv))Install Dependencies:With the virtual environment active, install the required packages:pip install -r requirements.txt 
-Install Masumi Library: Ensure the masumi library is installed within this virtual environment. If it's a local package or from a private source, use the appropriate pip install command (e.g., pip install -e /path/to/local/masumi, pip install git+https://...).Configure Environment Variables (.env file):Create a file named .env in the project directory.Add the following variables, replacing placeholder values with your actual details:# Masumi Configuration
+
+# Kodosumi-Masumi API Wrapper (MIP-003 Compliant)
+
+## Overview
+
+This FastAPI application serves as a bridge between the Masumi payment network and a Kodosumi AI flow execution service. It exposes an API compliant with the MIP-003 standard, allowing users to:
+
+- Discover the service's input requirements (`/input_schema`)
+- Initiate a job with specific inputs (`/start_job`)
+- Receive Masumi payment details to complete the payment
+- Automatically trigger a designated Kodosumi flow upon successful Masumi payment confirmation
+- Poll the Kodosumi flow for completion
+- Check job status and retrieve the final result (`/status`)
+
+The wrapper handles:
+- Authentication with Kodosumi
+- Dynamic flow discovery and triggering
+- Polling for completion
+- Integration with the Masumi payment library
+
+---
+
+## Prerequisites
+
+- **Python**: Version 3.8 or higher
+- **pip**: Python package installer
+- **Virtual Environment Tool**: `venv` (recommended)
+- **Masumi Python Library**: Must be installable, includes `masumi.config.Config` and `masumi.payment.Payment`
+- **Kodosumi Instance Access**: Valid base URL, username, and password
+- **Logging Configuration**: `logging_config.py` file with `setup_logging()` function
+
+---
+
+## Setup Steps
+
+### 1. Get the Code
+
+- Save the Python script as `kodosumi_masumi_wrapper.py`
+- Ensure `logging_config.py` is in the same directory
+- Create a `requirements.txt` file (as provided previously)
+
+### 2. Create and Activate Virtual Environment
+
+```bash
+python3 -m venv .venv
+```
+
+Activate the environment:
+
+- **macOS/Linux**:  
+  ```bash
+  source .venv/bin/activate
+  ```
+
+- **Windows (CMD)**:  
+  ```cmd
+  .\.venv\Scripts\activate.bat
+  ```
+
+- **Windows (PowerShell)**:  
+  ```powershell
+  .\.venv\Scripts\Activate.ps1
+  ```
+
+### 3. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+Install the Masumi library (custom install if needed):
+
+```bash
+pip install -e /path/to/local/masumi
+# or
+pip install git+https://...
+```
+
+### 4. Configure Environment Variables (`.env` file)
+
+Create a `.env` file in the project directory:
+
+```dotenv
+# Masumi Configuration
 PAYMENT_SERVICE_URL="http://your_masumi_payment_service_url"
-PAYMENT_API_KEY="your_masumi_payment_api_key" # May be optional depending on Masumi lib
+PAYMENT_API_KEY="your_masumi_payment_api_key"
 AGENT_IDENTIFIER="your_unique_agent_identifier_registered_with_masumi"
 SELLER_VKEY="your_masumi_seller_verification_key"
-NETWORK="Cardano Mainnet" # Or Preprod, Preview, etc.
+NETWORK="Cardano Mainnet"
 
 # Kodosumi Configuration
-KODOSUMI_BASE_URL="http://your_kodosumi_instance_url" # e.g., http://playground.kodosumi.io
+KODOSUMI_BASE_URL="http://your_kodosumi_instance_url"
 KODOSUMI_USERNAME="your_kodosumi_username"
 KODOSUMI_PASSWORD="your_kodosumi_password"
-KODOSUMI_FLOW_NAME_CONTAINS="hymn" # A unique part of the target Kodosumi flow's 'summary' field (case-insensitive search)
+KODOSUMI_FLOW_NAME_CONTAINS="hymn"
 
-# Kodosumi Input Mapping (How wrapper input maps to Kodosumi API call)
-# The key Kodosumi API expects in its POST request data payload.
-KODOSUMI_PAYLOAD_INPUT_KEY="topic" 
-# The 'id' of the field from HARDCODED_KODOSUMI_INPUT_FIELDS (in the script)
-# whose value will be sent to Kodosumi under the KODOSUMI_PAYLOAD_INPUT_KEY.
+# Input Mapping
+KODOSUMI_PAYLOAD_INPUT_KEY="topic"
 KODOSUMI_PRIMARY_FIELD_ID_FOR_PAYLOAD="topic"
 
-# Kodosumi Polling Configuration 
-KODOSUMI_POLL_INTERVAL_SECONDS="10" # Time (seconds) between status checks
-KODOSUMI_POLL_TIMEOUT_SECONDS="300"  # Max time (seconds) to poll before failing job
-KODOSUMI_TERMINAL_SUCCESS_STATUSES="finished,completed" # Comma-separated Kodosumi statuses indicating success
-KODOSUMI_TERMINAL_ERROR_STATUSES="failed,error,cancelled,timeout" # Comma-separated Kodosumi statuses indicating error
+# Polling Configuration
+KODOSUMI_POLL_INTERVAL_SECONDS="10"
+KODOSUMI_POLL_TIMEOUT_SECONDS="300"
+KODOSUMI_TERMINAL_SUCCESS_STATUSES="finished,completed"
+KODOSUMI_TERMINAL_ERROR_STATUSES="failed,error,cancelled,timeout"
 
-# Logging level (OPTIONAL: DEBUG, INFO, WARNING, ERROR, CRITICAL)
+# Logging
 LOG_LEVEL="INFO"
-Security: Keep your .env file secure and do not commit it to version control.Review Hardcoded Schema (Optional but Recommended):Open kodosumi_masumi_wrapper.py.Review the HARDCODED_KODOSUMI_INPUT_FIELDS list near the top.Modify this list to accurately define the input fields your specific Kodosumi flow requires (using the structure defined in MIP-003 Attachment 01 / the script). Ensure the id used for KODOSUMI_PRIMARY_FIELD_ID_FOR_PAYLOAD exists here.Running the WrapperEnsure your virtual environment is active.Run the FastAPI application using Uvicorn:uvicorn kodosumi_masumi_wrapper:app --host 0.0.0.0 --port 8000 --reload
---host 0.0.0.0 makes the server accessible on your network (use 127.0.0.1 for local access only).--port 8000 specifies the listening port.--reload automatically restarts the server on code changes (useful for development).The server should now be running and accessible (e.g., at http://localhost:8000). You can view the auto-generated API documentation (Swagger UI) at http://localhost:8000/docs.API Endpoints (MIP-003)GET /availability: Checks server status and returns agent identifier.GET /input_schema: Returns the input schema defined in HARDCODED_KODOSUMI_INPUT_FIELDS.POST /start_job: Initiates a job, validates input against the schema, creates a Masumi payment request, and returns job/payment details.GET /status?job_id={job_id}: Checks the job status (pending, awaiting_payment, running, completed, failed) and returns the final string result if completed.POST /provide_input: (Stub only) Intended for jobs needing intermediate input (not fully implemented for Kodosumi flow).GET /health: Basic health check.Kodosumi Interaction FlowPayment Confirmation: The wrapper waits for the Masumi library to confirm payment via the callback mechanism.Authentication: Logs into Kodosumi (/login) using credentials from .env.Flow Discovery: Fetches available flows (/flow) and finds the target flow matching KODOSUMI_FLOW_NAME_CONTAINS.Trigger Flow: Sends a POST request to the target flow's URL, including the primary input data (mapped via KODOSUMI_PAYLOAD_INPUT_KEY and KODOSUMI_PRIMARY_FIELD_ID_FOR_PAYLOAD).Get Status URL: Expects a redirect (e.g., 302) from the trigger response containing the URL to poll for the job status.Polling: Periodically sends GET requests to the Kodosumi job status URL.Completion/Error: Continues polling until the status reported by Kodosumi is one of the configured terminal success or error statuses, or until the timeout is reached.Result Return: If successful, the final JSON response from Kodosumi is processed, and the raw string output is extracted for the /status endpoint.Important NotesProduction Readiness: The current script uses an in-memory dictionary (jobs) to store job state. This is not suitable for production as all job data will be lost on restart. Use a persistent database (e.g., PostgreSQL, Redis, MongoDB) for production deployments.Masumi Library: This wrapper relies heavily on the correct behavior and API of your specific masumi Python library (constructor signature for Payment, methods like create_payment_request, start_status_monitoring, complete_payment, stop_status_monitoring, and the callback signature/data). Ensure the wrapper code aligns with your library version.Error Handling: Basic error handling for Kodosumi API calls and internal operations is included. Enhance as needed for production robustness.Input Validation: The /start_job endpoint performs basic validation based on HARDCODED_KODOSUMI_INPUT_FIELDS. More complex validation (regex, specific number ranges, etc.) might need to be added if required.
+```
+
+> ⚠️ **Security:** Do not commit your `.env` file to version control.
+
+---
+
+## Review Hardcoded Schema (Optional)
+
+- Open `kodosumi_masumi_wrapper.py`
+- Review and modify `HARDCODED_KODOSUMI_INPUT_FIELDS` to match your flow’s requirements
+
+---
+
+## Running the Wrapper
+
+Activate your virtual environment and run:
+
+```bash
+uvicorn kodosumi_masumi_wrapper:app --host 0.0.0.0 --port 8000 --reload
+```
+
+- `--host 0.0.0.0` makes it network-accessible
+- `--port 8000` sets the listening port
+- `--reload` restarts on code changes (for development)
+
+Visit:
+
+- Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+---
+
+## API Endpoints (MIP-003)
+
+- `GET /availability`: Server status and agent ID
+- `GET /input_schema`: Returns input schema
+- `POST /start_job`: Validates input, creates payment request
+- `GET /status?job_id={job_id}`: Checks job status and result
+- `POST /provide_input`: (Stub only) For intermediate inputs
+- `GET /health`: Basic health check
+
+---
+
+## Kodosumi Interaction Flow
+
+1. **Payment Confirmation**: Waits for Masumi payment callback
+2. **Authentication**: Logs into Kodosumi (`/login`)
+3. **Flow Discovery**: Searches `/flow` for target
+4. **Trigger Flow**: Sends `POST` with input payload
+5. **Get Status URL**: Expects redirect with poll URL
+6. **Polling**: Periodically checks job status
+7. **Completion/Error**: Resolves when terminal status is reached
+8. **Result Return**: Final result sent to `/status`
+
+---
+
+## Important Notes
+
+- **Production Readiness**: Current job storage is in-memory. Use a persistent store for production.
+- **Masumi Library**: Ensure compatibility with your version of the Masumi library.
+- **Error Handling**: Basic handling is included; expand for robustness.
+- **Input Validation**: `/start_job` does simple schema validation. Add more if needed.
