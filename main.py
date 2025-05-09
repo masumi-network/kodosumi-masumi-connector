@@ -358,9 +358,6 @@ async def input_schema():
         if "data" in field and field["data"]: transformed["data"] = field["data"]
         
         validations = [v for v in field.get("validations", []) if v.get("validation") not in ["required", "optional"]]
-        if field.get("is_required"):
-            if not any(v.get("validation") == "required" for v in validations): 
-                validations.append({"validation": "required", "value": "true"})
         
         if validations: transformed["validations"] = validations
         output_fields.append(transformed)
