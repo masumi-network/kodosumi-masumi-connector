@@ -27,6 +27,10 @@ AGENT_IDENTIFIER = os.getenv("AGENT_IDENTIFIER")
 SELLER_VKEY = os.getenv("SELLER_VKEY")
 NETWORK = os.getenv("NETWORK")
 
+# Price Configuration
+PAYMENT_AMOUNT = int(os.getenv("PAYMENT_AMOUNT", "3000000"))
+PAYMENT_UNIT = os.getenv("PAYMENT_UNIT", "lovelace")
+
 if not all([PAYMENT_SERVICE_URL, AGENT_IDENTIFIER, SELLER_VKEY, NETWORK]):
     logger.critical("Masumi core environment variables are not fully configured.")
     sys.exit("Error: Core Masumi configuration missing.")
@@ -243,13 +247,22 @@ async def start_job(data: StartJobRequest):
             logger.info(f"Job {job_id}: Using self-calculated input_hash.")
 
         response_payload = {
-            "status": "success", "job_id": job_id, "blockchainIdentifier": payment_id,
+            "status": "success", 
+            "job_id": job_id, 
+            "blockchainIdentifier": payment_id,
             "submitResultTime": masumi_details.get("submitResultTime"), 
             "unlockTime": masumi_details.get("unlockTime"),
             "externalDisputeUnlockTime": masumi_details.get("externalDisputeUnlockTime"),
-            "agentIdentifier": AGENT_IDENTIFIER, "sellerVkey": SELLER_VKEY,
+            "agentIdentifier": AGENT_IDENTIFIER, 
+            "sellerVkey": SELLER_VKEY,
             "identifierFromPurchaser": data.identifier_from_purchaser,
-            "input_hash": final_input_hash
+            "input_hash": final_input_hash,
+            "amounts": [
+                {
+                    "amount": PAYMENT_AMOUNT,
+                    "unit": PAYMENT_UNIT
+                }
+            ]
         }
         return response_payload
     except HTTPException: raise
