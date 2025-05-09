@@ -346,8 +346,8 @@ async def get_status_endpoint(job_id: str = Query(..., description="Job ID to ch
 
 @app.get("/availability")
 async def check_availability():
-    return {"status": "available", "agentidentifier": AGENT_IDENTIFIER, "message": "Server operational."}
-
+    #return {"status": "available", "agentidentifier": AGENT_IDENTIFIER, "message": "Server operational."}
+    return {"type": "masumi-agent"}
 @app.get("/input_schema")
 async def input_schema():
     logger.info("Received /input_schema request.")
